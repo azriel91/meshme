@@ -425,6 +425,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cff77d8686867eceff3105329d4698d96c2391c176d5d03adc90c7389162b5b8"
 
 [[package]]
+name = "ash"
+version = "0.29.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "003d1fb2eb12eb06d4a03dbe02eea67a9fac910fa97932ab9e3a75b96a1ea5e5"
+dependencies = [
+ "shared_library",
+]
+
+[[package]]
 name = "atom"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1223,14 +1232,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "gfx-backend-empty"
-version = "0.3.1"
+name = "gfx-backend-vulkan"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cdf40d1cd04f92f8555db32dd9fb5bb13d17ae4624318b73604b4186b1d66f0a"
+checksum = "5facf0b6e4306a6a93682077f85602c89b49aca8ecceb73b9558e7baa37f8c54"
 dependencies = [
+ "ash",
+ "byteorder",
+ "core-graphics 0.17.3",
+ "derivative",
  "gfx-hal",
+ "lazy_static",
+ "log",
+ "objc",
  "raw-window-handle 0.1.2",
+ "smallvec 0.6.13",
+ "winapi",
  "winit",
+ "x11",
 ]
 
 [[package]]
@@ -1702,6 +1721,7 @@ name = "meshme"
 version = "0.1.0"
 dependencies = [
  "amethyst",
+ "log",
 ]
 
 [[package]]
@@ -2768,7 +2788,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa01882dc9f3f64684393724d0d49d2315b612eeeb029eded2181385d796c75f"
 dependencies = [
  "derivative",
- "gfx-backend-empty",
+ "gfx-backend-vulkan",
  "gfx-hal",
  "lazy_static",
  "log",
@@ -3010,6 +3030,16 @@ checksum = "2c4ccb6d0d32d277d3ef7dea86203d8210945eb7a45fba89dd445b3595dd0dfc"
 dependencies = [
  "cmake",
  "pkg-config",
+]
+
+[[package]]
+name = "shared_library"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a9e7e0f2bfae24d8a5b5a66c5b257a83c7412304311512a0c054cd5e619da11"
+dependencies = [
+ "lazy_static",
+ "libc",
 ]
 
 [[package]]
@@ -3541,6 +3571,16 @@ dependencies = [
  "wayland-client",
  "winapi",
  "x11-dl",
+]
+
+[[package]]
+name = "x11"
+version = "2.18.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77ecd092546cb16f25783a5451538e73afc8d32e242648d54f4ae5459ba1e773"
+dependencies = [
+ "libc",
+ "pkg-config",
 ]
 
 [[package]]

@@ -5,8 +5,9 @@ authors = ["Azriel Hoh <azriel91@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-amethyst = { version = "0.15.0", default-features = false, features = ["gltf", "renderer"] }
+amethyst = { version = "0.15.0", default-features = false, features = ["animation", "gltf", "renderer"] }
+log = "0.4.8"
 
 [features]
-default = ["empty"]
-empty = ["amethyst/empty"]
+default = ["vulkan"]
+vulkan = ["amethyst/vulkan"]
