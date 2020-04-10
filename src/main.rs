@@ -1,10 +1,13 @@
 use amethyst::{
     animation::AnimationBundle,
-    assets::{AssetStorage, Handle, Loader, ProgressCounter},
+    assets::{AssetStorage, Handle, Loader, Prefab, ProgressCounter},
     core::transform::{Transform, TransformBundle},
     ecs::WorldExt,
-    gltf::{GltfSceneAsset, GltfSceneFormat, GltfSceneLoaderSystemDesc},
-    renderer::{types::DefaultBackend, RenderingBundle},
+    gltf::{GltfPrefab, GltfSceneAsset, GltfSceneFormat, GltfSceneLoaderSystemDesc},
+    renderer::{
+        types::{DefaultBackend, Mesh},
+        RenderingBundle,
+    },
     utils::application_root_dir,
     Application, GameData, GameDataBuilder, State, StateData, StateEvent, Trans,
 };
@@ -12,6 +15,22 @@ use amethyst::{
 #[derive(Debug, Default)]
 pub struct Example {
     progress_counter: Option<ProgressCounter>,
+}
+
+impl Example {
+    fn print_meshes(mesh_storage: &AssetStorage<Mesh>, gltf_prefab: &Prefab<GltfPrefab>) {
+        gltf_prefab.entities().for_each(|prefab_entity| {
+            let mesh = prefab_entity
+                .data()
+                .and_then(|prefab_data| prefab_data.mesh_handle.as_ref())
+                .and_then(|mesh_handle| mesh_storage.get(mesh_handle));
+
+            if let Some(_mesh) = mesh {
+                // https://docs.rs/rendy-mesh/0.4.1/rendy_mesh/struct.Mesh.html
+                log::info!("mesh is some.");
+            }
+        });
+    }
 }
 
 /// Counter so we don't wait indefinitely.
@@ -56,12 +75,17 @@ impl<'a, 'b> State<GameData<'a, 'b>, StateEvent> for Example {
                     data.world.read_resource::<Handle<GltfSceneAsset>>().clone();
                 let gltf_prefab_storage =
                     data.world.read_resource::<AssetStorage<GltfSceneAsset>>();
-                let _gltf_prefab = gltf_prefab_storage
+                let gltf_prefab = gltf_prefab_storage
                     .get(&gltf_prefab_handle)
                     .expect("GLTF scene should be loaded, so this should be some.");
 
                 // Do something with gltf_prefab
-                println!("GLTF scene loaded!");
+                log::info!("GLTF scene loaded!");
+
+                let mesh_storage = data.world.read_resource::<AssetStorage<Mesh>>();
+
+                Self::print_meshes(&mesh_storage, gltf_prefab);
+
                 return Trans::Quit;
             }
         }
