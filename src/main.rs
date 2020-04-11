@@ -1,16 +1,18 @@
 use amethyst::{
-    animation::AnimationBundle,
-    assets::{AssetStorage, Handle, Loader, Prefab, ProgressCounter},
-    core::transform::{Transform, TransformBundle},
+    assets::{AssetStorage, Handle, Loader, Processor, ProgressCounter},
+    core::transform::TransformBundle,
     ecs::WorldExt,
-    gltf::{GltfPrefab, GltfSceneAsset, GltfSceneFormat, GltfSceneLoaderSystemDesc},
-    renderer::{
-        types::{DefaultBackend, Mesh},
-        RenderingBundle,
-    },
+    renderer::{types::DefaultBackend, RenderingBundle},
     utils::application_root_dir,
     Application, GameData, GameDataBuilder, State, StateData, StateEvent, Trans,
 };
+
+use gltf_asset::GltfAsset;
+use gltf_format::GltfFormat;
+
+mod gltf_asset;
+mod gltf_format;
+mod importer;
 
 #[derive(Debug, Default)]
 pub struct Example {
@@ -18,18 +20,8 @@ pub struct Example {
 }
 
 impl Example {
-    fn print_meshes(mesh_storage: &AssetStorage<Mesh>, gltf_prefab: &Prefab<GltfPrefab>) {
-        gltf_prefab.entities().for_each(|prefab_entity| {
-            let mesh = prefab_entity
-                .data()
-                .and_then(|prefab_data| prefab_data.mesh_handle.as_ref())
-                .and_then(|mesh_handle| mesh_storage.get(mesh_handle));
-
-            if let Some(_mesh) = mesh {
-                // https://docs.rs/rendy-mesh/0.4.1/rendy_mesh/struct.Mesh.html
-                log::info!("mesh is some.");
-            }
-        });
+    fn print_meshes(_gltf_asset: &GltfAsset) {
+        // gltf_asset.0
     }
 }
 
@@ -44,21 +36,20 @@ impl<'a, 'b> State<GameData<'a, 'b>, StateEvent> for Example {
         let mut progress_counter = ProgressCounter::new();
 
         // Request the GLTF data to be loaded.
-        let gltf_prefab_handle = {
+        let gltf_asset_handle = {
             let loader = world.read_resource::<Loader>();
 
-            // GltfSceneAsset is type alias for Prefab<GltfPrefab>
-            let gltf_prefab_storage = world.read_resource::<AssetStorage<GltfSceneAsset>>();
+            let gltf_asset_storage = world.read_resource::<AssetStorage<GltfAsset>>();
             loader.load(
                 "puffy.gltf",
-                GltfSceneFormat::default(),
+                GltfFormat,
                 &mut progress_counter,
-                &gltf_prefab_storage,
+                &gltf_asset_storage,
             )
         };
 
         self.progress_counter = Some(progress_counter);
-        world.insert(gltf_prefab_handle);
+        world.insert(gltf_asset_handle);
         world.insert(Counter(0));
     }
 
@@ -66,25 +57,21 @@ impl<'a, 'b> State<GameData<'a, 'b>, StateEvent> for Example {
         &mut self,
         data: StateData<'_, GameData<'a, 'b>>,
     ) -> Trans<GameData<'a, 'b>, StateEvent> {
-        // Run the dispatcher, which loads the GLTF scene.
+        // Run the dispatcher, which loads the `GltfAsset`.
         data.data.update(&data.world);
 
         if let Some(progress_counter) = self.progress_counter.as_ref() {
             if progress_counter.is_complete() {
-                let gltf_prefab_handle =
-                    data.world.read_resource::<Handle<GltfSceneAsset>>().clone();
-                let gltf_prefab_storage =
-                    data.world.read_resource::<AssetStorage<GltfSceneAsset>>();
-                let gltf_prefab = gltf_prefab_storage
-                    .get(&gltf_prefab_handle)
-                    .expect("GLTF scene should be loaded, so this should be some.");
+                let gltf_asset_handle = data.world.read_resource::<Handle<GltfAsset>>().clone();
+                let gltf_asset_storage = data.world.read_resource::<AssetStorage<GltfAsset>>();
+                let gltf_asset = gltf_asset_storage
+                    .get(&gltf_asset_handle)
+                    .expect("`GltfAsset` should be loaded, so this should be some.");
 
-                // Do something with gltf_prefab
-                log::info!("GLTF scene loaded!");
+                // Do something with gltf_asset
+                log::info!("`GltfAsset` loaded!");
 
-                let mesh_storage = data.world.read_resource::<AssetStorage<Mesh>>();
-
-                Self::print_meshes(&mesh_storage, gltf_prefab);
+                Self::print_meshes(gltf_asset);
 
                 return Trans::Quit;
             }
@@ -93,7 +80,7 @@ impl<'a, 'b> State<GameData<'a, 'b>, StateEvent> for Example {
         let mut counter = data.world.write_resource::<Counter>();
         counter.0 += 1;
         if counter.0 == 1000 {
-            let message = "GLTF scene not loaded after 1000 iterations. Check:\n\
+            let message = "`GltfAsset` not loaded after 1000 iterations. Check:\n\
             * asset path\n\
             * systems needed to load GLTF -- GltfSceneLoaderSystemDesc, animation stuff?\n";
             log::error!("{}", message);
@@ -114,11 +101,7 @@ fn main() -> Result<(), amethyst::Error> {
     let assets_dir = app_root.join("assets");
 
     let game_data = GameDataBuilder::default()
-        .with_system_desc(GltfSceneLoaderSystemDesc::default(), "gltf_loader", &[])
-        .with_bundle(
-            AnimationBundle::<usize, Transform>::new("animation_control", "sampler_interpolation")
-                .with_dep(&["gltf_loader"]),
-        )?
+        .with(Processor::<GltfAsset>::new(), "gltf_asset_processor", &[])
         .with_bundle(TransformBundle::new())?
         .with_bundle(RenderingBundle::<DefaultBackend>::new())?;
 
