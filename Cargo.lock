@@ -1721,7 +1721,10 @@ name = "meshme"
 version = "0.1.0"
 dependencies = [
  "amethyst",
+ "base64 0.11.0",
+ "gltf",
  "log",
+ "serde",
 ]
 
 [[package]]
