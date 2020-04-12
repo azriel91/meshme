@@ -20,8 +20,13 @@ pub struct Example {
 }
 
 impl Example {
-    fn print_meshes(_gltf_asset: &GltfAsset) {
-        // gltf_asset.0
+    fn print_meshes(gltf_asset: &GltfAsset) {
+        gltf_asset
+            .0
+            .meshes()
+            .flat_map(|mesh| mesh.primitives())
+            .map(|primitive| primitive.bounding_box())
+            .for_each(|bounding_box| println!("{:?}", bounding_box));
     }
 }
 
